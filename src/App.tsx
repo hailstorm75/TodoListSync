@@ -1,21 +1,19 @@
 import React from 'react';
 import './App.css';
-import {ActionButton, Image, Text, Stack} from '@fluentui/react';
+import GoogleLogin from "react-google-login";
+import Footer from "./components/Footer";
+import Header from "./components/Header";
+
 
 function App() {
     return (
         <div className="App">
-            <header className="App-header">
-                <Stack horizontal>
-                    <Image/>
-                    <Text variant={"xLarge"}>TodoListSync</Text>
-                    <ActionButton allowDisabledFocus >
-                        New sync
-                    </ActionButton>
-                </Stack>
-            </header>
             <body>
+                <Header/>
 
+                <GoogleLogin clientId={"18533555788-5hsflia0fi81s1ppisusuejpo1rbttla.apps.googleusercontent.com"}></GoogleLogin>
+
+                <Footer/>
             </body>
         </div>
     );
