@@ -1,22 +1,17 @@
 import React from 'react';
 import './App.css';
-import GoogleLogin from "react-google-login";
-import Footer from "./components/Footer";
 import Header from "./components/Header";
-
+import Footer from "./components/Footer";
+import Body from "./components/Body";
 
 function App() {
-    return (
-        <div className="App">
-            <body>
-                <Header/>
-
-                <GoogleLogin clientId={"18533555788-5hsflia0fi81s1ppisusuejpo1rbttla.apps.googleusercontent.com"}></GoogleLogin>
-
-                <Footer/>
-            </body>
-        </div>
-    );
+  return (
+    <div className="App">
+      <Header/>
+      <Body/>
+      <Footer/>
+    </div>
+  );
 }
 
 export default App;

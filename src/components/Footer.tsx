@@ -1,11 +1,6 @@
-
-function Footer() {
-    const year : number = new Date().getFullYear();
-
+const Footer = () => {
     return (
-      <footer>
-          <span>TodoListSync All right reserved {year}</span>
-      </footer>
+      <footer></footer>
     );
 }
 
