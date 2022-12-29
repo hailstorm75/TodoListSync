@@ -25,9 +25,12 @@ interface ILog {
 
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/tasks/v1/rest';
 const SCOPES = 'https://www.googleapis.com/auth/tasks.readonly';
+const CLIENT_ID = "18533555788-5fr6kdhaqh7j8dfogv2u1qqut4m1p94f.apps.googleusercontent.com";
 
 const GoogleTasks = () => {
   const googleButtonRef = React.createRef<HTMLInputElement>();
+
+  const [tokenClient, setTokenClient] = useState<any>({});
   const [user, setUser] = useState<IGoogleUser | null>(null);
   const [isLoadingLists, setIsLoadingLists] = useState(false);
   const [taskLists, setTaskLists] = useState<any[]>([]);
@@ -43,10 +46,15 @@ const GoogleTasks = () => {
     }
   }
 
+  const loadGoogleTasks = () => {
+    const accessToken = tokenClient.requestAccessToken();
+    console.log(accessToken);
+  }
+
   useScript("https://accounts.google.com/gsi/client", () => {
     const windowProxy: any = window;
     windowProxy.google.accounts.id.initialize({
-      client_id: "18533555788-5fr6kdhaqh7j8dfogv2u1qqut4m1p94f.apps.googleusercontent.com",
+      client_id: CLIENT_ID,
       callback: onGoogleSignIn,
       auto_select: false
     });
@@ -54,6 +62,26 @@ const GoogleTasks = () => {
     windowProxy.google.accounts.id.renderButton(googleButtonRef.current, {
       size: "medium"
     });
+
+    setTokenClient(
+      windowProxy.google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: (tokenResponse: any) => {
+          console.log(tokenResponse);
+
+          if (tokenResponse && tokenResponse.access_token) {
+            fetch("https://googleapis.com/tasks/v1/users/@me/lists", {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${tokenResponse.access_token}`
+              }
+            }).then(result => console.log(result));
+          }
+        }
+      })
+    );
   });
 
   const addLog = (severity: AlertColor, message: string) => {
@@ -127,7 +155,7 @@ const GoogleTasks = () => {
 
       <div>
         <div>
-          {!user && <div ref={googleButtonRef}></div>}
+          {!user && <Button onClick={loadGoogleTasks}>Google Tasks</Button>}
           {user && (
             <div>
               <Avatar src={user.picture} alt="Google profile"/>
