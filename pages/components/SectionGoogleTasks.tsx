@@ -1,6 +1,6 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useState, useRef} from "react";
 import {
-  Alert,
+  Alert, AlertColor, Avatar,
   Backdrop,
   Button,
   CircularProgress,
@@ -12,94 +12,135 @@ import {
   Snackbar
 } from "@mui/material";
 import GoogleIcon from '@mui/icons-material/Google';
+import {useScript} from "../../hooks/useScript";
+import jwt_decode from "jwt-decode";
+import {IGoogleClient} from "../../interfaces/IGoogleClient";
+import {IGoogleUser} from "../../interfaces/IGoogleUser";
 
-const googleTasksApi = require('google-tasks-api')
+interface ILog {
+  id: number;
+  severity: AlertColor;
+  message: string;
+}
+
+const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/tasks/v1/rest';
+const SCOPES = 'https://www.googleapis.com/auth/tasks.readonly';
 
 const GoogleTasks = () => {
-  const [authenticated, setAuthenticated] = useState<boolean>(false);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const googleButtonRef = React.createRef<HTMLInputElement>();
+  const [user, setUser] = useState<IGoogleUser | null>(null);
   const [isLoadingLists, setIsLoadingLists] = useState(false);
-  const [successOpen, setSuccessOpen] = useState(false);
-  const [failOpen, setFailOpen] = useState(false);
   const [taskLists, setTaskLists] = useState<any[]>([]);
+  const [log, setLog] = useState<ILog[]>([]);
+
+  const onGoogleSignIn = (user: IGoogleClient) => {
+    try {
+      const googleUser = jwt_decode<IGoogleUser>(user.credential);
+      setUser(googleUser)
+    }
+    catch (e: any) {
+      addLog("error", "Failed to log in: " + e.toString())
+    }
+  }
+
+  useScript("https://accounts.google.com/gsi/client", () => {
+    const windowProxy: any = window;
+    windowProxy.google.accounts.id.initialize({
+      client_id: "18533555788-5fr6kdhaqh7j8dfogv2u1qqut4m1p94f.apps.googleusercontent.com",
+      callback: onGoogleSignIn,
+      auto_select: false
+    });
+
+    windowProxy.google.accounts.id.renderButton(googleButtonRef.current, {
+      size: "medium"
+    });
+  });
+
+  const addLog = (severity: AlertColor, message: string) => {
+    setLog([
+      ...log,
+      {
+        id: log.length,
+        severity: severity,
+        message: message
+      }
+    ])
+  }
+
+  const removeLog = (id: number) => {
+    const filtered = log.filter(item => item.id !== id);
+    setLog(filtered);
+  }
 
   useEffect(() => {
-    if (!authenticated)
+    if (!user)
       return;
 
     setIsLoadingLists(true);
-    googleTasksApi
-      .listTaskLists()
-      .then((result: any) => {
-        setTaskLists(result);
-        setIsLoadingLists(false);
-      });
-  }, [authenticated])
 
-  const handleSuccessClose = () => {
-    setSuccessOpen(false);
-  }
-  const handleFailClose = () => {
-    setFailOpen(false);
-  }
+  }, [user])
 
-  const connectToApiAsync = async () => {
-    if (authenticated)
-      return;
-    // if (googleTasksApi.isSignedIn()) {
-    //   if (!authenticated)
-    //     setAuthenticated(true);
-    //
-    //   return;
-    // }
-
-    setIsAuthenticating(true);
-    try {
-      const isAuthorized = await googleTasksApi.authorize('18533555788-5fr6kdhaqh7j8dfogv2u1qqut4m1p94f.apps.googleusercontent.com');
-
-      if (!isAuthorized) {
-        setFailOpen(true);
-        return;
-      }
-
-      setSuccessOpen(true);
-      setAuthenticated(true);
-    }
-    catch
-    {
-      setFailOpen(true);
-    }
-    finally {
-      setIsAuthenticating(false);
-    }
-  };
+  // const connectToApiAsync = async () => {
+  //   if (authenticated)
+  //     return;
+  //   // if (googleTasksApi.isSignedIn()) {
+  //   //   if (!authenticated)
+  //   //     setAuthenticated(true);
+  //   //
+  //   //   return;
+  //   // }
+  //
+  //   setIsAuthenticating(true);
+  //   try {
+  //     const isAuthorized = await googleTasksApi.authorize('18533555788-5fr6kdhaqh7j8dfogv2u1qqut4m1p94f.apps.googleusercontent.com');
+  //
+  //     if (!isAuthorized) {
+  //       addLog("error", "Failed to authorize")
+  //       return;
+  //     }
+  //
+  //     addLog("success", "Logged in")
+  //     setAuthenticated(true);
+  //   }
+  //   catch (e: any)
+  //   {
+  //     console.log(e)
+  //     addLog("error", "Failed to authorize: " + e.toString())
+  //   }
+  //   finally {
+  //     setIsAuthenticating(false);
+  //   }
+  // };
 
   return (
     <>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={isAuthenticating}>
-        <CircularProgress color="inherit" />
-      </Backdrop>
-
-      <Snackbar open={successOpen} autoHideDuration={3000} onClose={handleSuccessClose}>
-        <Alert severity="success" sx={{ width: '100%' }} onClose={handleSuccessClose}>
-          Logged in successfully
-        </Alert>
-      </Snackbar>
-      <Snackbar open={failOpen} autoHideDuration={3000} onClose={handleFailClose}>
-        <Alert severity="error" sx={{ width: '100%' }} onClose={handleFailClose}>
-          Login failed
-        </Alert>
-      </Snackbar>
+      {
+        log.map(item =>
+        (
+          <Snackbar open={true} key={item.id} autoHideDuration={3000} onClose={() => removeLog(item.id)}>
+            <Alert severity={item.severity} sx={{ width: '100%' }} onClose={() => removeLog(item.id)}>
+              {item.message}
+            </Alert>
+          </Snackbar>
+        ))
+      }
 
       <div>
-        {!authenticated &&
-          <Button onClick={connectToApiAsync} variant="outlined" startIcon={<GoogleIcon/>}>
-              Login to Google
-          </Button>
-        }
-        {authenticated && isLoadingLists &&
+        <div>
+          {!user && <div ref={googleButtonRef}></div>}
+          {user && (
+            <div>
+              <Avatar src={user.picture} alt="Google profile"/>
+              <p>{user.email}</p>
+
+              <Button
+                onClick={() => { setUser(null); }} variant="outlined">
+                Logout
+              </Button>
+            </div>
+          )}
+        </div>
+        {user && isLoadingLists &&
           <div>
               <Skeleton animation="wave" />
               <Skeleton animation="wave" />
@@ -107,10 +148,10 @@ const GoogleTasks = () => {
               <Skeleton animation="wave" />
           </div>
         }
-        {authenticated && !isLoadingLists && taskLists.length == 0 &&
+        {user && !isLoadingLists && taskLists.length == 0 &&
           <span>There are no task lists</span>
         }
-        {authenticated && !isLoadingLists && taskLists.length > 0 &&
+        {user && !isLoadingLists && taskLists.length > 0 &&
           <List>
           </List>
         }
