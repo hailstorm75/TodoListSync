@@ -1,120 +1,73 @@
 import React, {useEffect, useState} from "react";
-import {
-  Alert,
-  Backdrop,
-  Button,
-  CircularProgress,
-  List,
-  ListItem,
-  ListItemButton,
-  Skeleton,
-  Slide,
-  Snackbar
-} from "@mui/material";
+import { useLoadGsiScript } from "../../hooks/GoogleAPILoader";
+import {ILog} from "../../interfaces/ILog";
+import {Alert, Button, Snackbar} from "@mui/material";
+import {AlertColor} from "@mui/material/Alert";
+import {useGoogleAuth} from "../../hooks/GoogleAuth";
 import GoogleIcon from '@mui/icons-material/Google';
 
-const googleTasksApi = require('google-tasks-api')
-
 const GoogleTasks = () => {
-  const [authenticated, setAuthenticated] = useState<boolean>(false);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [isLoadingLists, setIsLoadingLists] = useState(false);
-  const [successOpen, setSuccessOpen] = useState(false);
-  const [failOpen, setFailOpen] = useState(false);
-  const [taskLists, setTaskLists] = useState<any[]>([]);
+  const [logs, setLogs] = useState<ILog[]>([]);
+  const { isOAuthClientLoaded, gsi } = useLoadGsiScript();
+  const { accessToken, client } = useGoogleAuth(gsi,
+  "18533555788-5fr6kdhaqh7j8dfogv2u1qqut4m1p94f.apps.googleusercontent.com",
+  ["https://www.googleapis.com/auth/tasks", "https://www.googleapis.com/auth/tasks.readonly"]);
+
+  const addLog = (message: string, severity: AlertColor) => {
+    const id = crypto.randomUUID();
+    setLogs([
+      ...logs,
+      {
+        id: id,
+        message: message,
+        severity: severity,
+      }
+    ])
+  }
+
+  const removeLog = (id: string) => {
+    const index = logs.findIndex(log => log.id === id)
+    if (index === -1) {
+      console.error(`Unable to remove log element from stack with UUID: '${id}'`)
+      return;
+    }
+
+    setLogs(logs.splice(index, 1))
+  }
 
   useEffect(() => {
-    if (!authenticated)
+    if (gsi === undefined) {
       return;
-
-    setIsLoadingLists(true);
-    googleTasksApi
-      .listTaskLists()
-      .then((result: any) => {
-        setTaskLists(result);
-        setIsLoadingLists(false);
-      });
-  }, [authenticated])
-
-  const handleSuccessClose = () => {
-    setSuccessOpen(false);
-  }
-  const handleFailClose = () => {
-    setFailOpen(false);
-  }
-
-  const connectToApiAsync = async () => {
-    if (authenticated)
-      return;
-    // if (googleTasksApi.isSignedIn()) {
-    //   if (!authenticated)
-    //     setAuthenticated(true);
-    //
-    //   return;
-    // }
-
-    setIsAuthenticating(true);
-    try {
-      const isAuthorized = await googleTasksApi.authorize('18533555788-5fr6kdhaqh7j8dfogv2u1qqut4m1p94f.apps.googleusercontent.com');
-
-      if (!isAuthorized) {
-        setFailOpen(true);
-        return;
-      }
-
-      setSuccessOpen(true);
-      setAuthenticated(true);
     }
-    catch
+
+    if (!isOAuthClientLoaded)
     {
-      setFailOpen(true);
+      addLog("Unable to load Google's API", "error");
+      return;
     }
-    finally {
-      setIsAuthenticating(false);
-    }
-  };
+  }, [isOAuthClientLoaded, gsi])
+
+  useEffect(() => {
+    if (!accessToken)
+      return;
+
+  }, [accessToken])
 
   return (
     <>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={isAuthenticating}>
-        <CircularProgress color="inherit" />
-      </Backdrop>
+      {logs.map(log => {
+        return (
+          <Snackbar key={log.id} open={true} autoHideDuration={3000} onClose={() => removeLog(log.id)}>
+            <Alert onClose={() => removeLog(log.id)} severity={log.severity} sx={{ width: '100%' }}>
+              {log.message}
+            </Alert>
+          </Snackbar>
+        )})
+      }
 
-      <Snackbar open={successOpen} autoHideDuration={3000} onClose={handleSuccessClose}>
-        <Alert severity="success" sx={{ width: '100%' }} onClose={handleSuccessClose}>
-          Logged in successfully
-        </Alert>
-      </Snackbar>
-      <Snackbar open={failOpen} autoHideDuration={3000} onClose={handleFailClose}>
-        <Alert severity="error" sx={{ width: '100%' }} onClose={handleFailClose}>
-          Login failed
-        </Alert>
-      </Snackbar>
-
-      <div>
-        {!authenticated &&
-          <Button onClick={connectToApiAsync} variant="outlined" startIcon={<GoogleIcon/>}>
-              Login to Google
-          </Button>
-        }
-        {authenticated && isLoadingLists &&
-          <div>
-              <Skeleton animation="wave" />
-              <Skeleton animation="wave" />
-              <Skeleton animation="wave" />
-              <Skeleton animation="wave" />
-          </div>
-        }
-        {authenticated && !isLoadingLists && taskLists.length == 0 &&
-          <span>There are no task lists</span>
-        }
-        {authenticated && !isLoadingLists && taskLists.length > 0 &&
-          <List>
-          </List>
-        }
-      </div>
+      {client && !accessToken &&
+        <Button onClick={() => client.requestAccessToken()} startIcon={<GoogleIcon/>}>Log in</Button>
+      }
     </>
   );
 };
