@@ -3,6 +3,15 @@ import React from "react";
 import Header from "./components/Header";
 import SectionGoogleTasks from "./components/SectionGoogleTasks";
 import Footer from "./components/Footer";
+import {Box, Card, CardContent, CardHeader } from "@mui/material";
+import Grid2 from "@mui/material/Unstable_Grid2";
+import {createTheme, ThemeProvider} from "@mui/material/styles";
+
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+  },
+});
 
 export default function Home() {
   return (
@@ -15,7 +24,28 @@ export default function Home() {
       </Head>
       <main>
         <Header/>
-        <SectionGoogleTasks/>
+        <ThemeProvider theme={darkTheme}>
+          <Box sx={{ width: '100%', padding: '20px' }}>
+            <Grid2 container spacing={2}>
+              <Grid2 md={6} sm={12}>
+                <Card variant="elevation">
+                  <CardHeader title="Google Tasks"/>
+                  <CardContent>
+                    <SectionGoogleTasks/>
+                  </CardContent>
+                </Card>
+              </Grid2>
+              <Grid2 md={6} sm={12}>
+                <Card>
+                  <CardHeader title="Microsoft TODO"/>
+                  <CardContent>
+                    <SectionGoogleTasks/>
+                  </CardContent>
+                </Card>
+              </Grid2>
+            </Grid2>
+          </Box>
+        </ThemeProvider>
         <Footer/>
       </main>
     </>
