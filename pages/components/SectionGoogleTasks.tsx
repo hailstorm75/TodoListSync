@@ -64,9 +64,10 @@ const GoogleTasks = () => {
         console.log(response)
       }
     };
-    xhr.open('GET', `https://tasks.googleapis.com/tasks/v1/users/@me/lists/${id}/tasks`);
+    xhr.open('GET', `https://tasks.googleapis.com/tasks/v1/users/@me/lists/${id}\tasks`);
     xhr.setRequestHeader('Authorization', 'Bearer ' + accessToken);
     xhr.setRequestHeader('Content-Type', "application/json");
+    xhr.setRequestHeader('Access-Control-Allow-Origin', "https://todo-list-sync-xp4m.vercel.app/");
     xhr.send();
   }
 
