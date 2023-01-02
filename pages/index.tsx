@@ -2,10 +2,13 @@ import Head from 'next/head'
 import React from "react";
 import Header from "./components/Header";
 import SectionGoogleTasks from "./components/SectionGoogleTasks";
+import SectionMicrosoftTodo from "./components/SectionMicrosoftTodo";
 import Footer from "./components/Footer";
 import {Box, Card, CardContent, CardHeader } from "@mui/material";
 import Grid2 from "@mui/material/Unstable_Grid2";
 import {createTheme, ThemeProvider} from "@mui/material/styles";
+import Notifications from "./components/Notifications";
+import {useNotifications} from "../hooks/NotificationsHook";
 
 const darkTheme = createTheme({
   palette: {
@@ -14,6 +17,8 @@ const darkTheme = createTheme({
 });
 
 export default function Home() {
+  const { notifications, removeNotification, addNotification } = useNotifications();
+
   return (
     <>
       <Head>
@@ -25,28 +30,32 @@ export default function Home() {
       <main>
         <Header/>
         <ThemeProvider theme={darkTheme}>
-          <Box sx={{ width: '100%', padding: '20px' }}>
-            <Grid2 container spacing={2}>
-              <Grid2 md={6} sm={12}>
-                <Card variant="elevation">
-                  <CardHeader title={
+          <>
+            <Notifications notifications={notifications} removeNotification={removeNotification} />
+            <Box sx={{ width: '100%', padding: '20px' }}>
+              <Grid2 container spacing={2}>
+                <Grid2 md={6} sm={12}>
+                  <Card variant="elevation">
+                    <CardHeader title={
                       `Google Tasks`
-                  }/>
-                  <CardContent>
-                    <SectionGoogleTasks/>
-                  </CardContent>
-                </Card>
+                    }/>
+                    <CardContent>
+                      <SectionGoogleTasks addNotification={addNotification}/>
+                    </CardContent>
+                  </Card>
+                </Grid2>
+                <Grid2 md={6} sm={12}>
+                  <Card>
+                    <CardHeader title="Microsoft TODO"/>
+                    <CardContent>
+                      <SectionMicrosoftTodo addNotification={addNotification}/>
+                    </CardContent>
+                  </Card>
+                </Grid2>
               </Grid2>
-              <Grid2 md={6} sm={12}>
-                <Card>
-                  <CardHeader title="Microsoft TODO"/>
-                  <CardContent>
-                    <SectionGoogleTasks/>
-                  </CardContent>
-                </Card>
-              </Grid2>
-            </Grid2>
-          </Box>
+            </Box>
+          </>
+
         </ThemeProvider>
         <Footer/>
       </main>

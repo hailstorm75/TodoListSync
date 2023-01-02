@@ -1,10 +1,7 @@
 import React, {useEffect, useState} from "react";
 import { useLoadGsiScript } from "../../hooks/GoogleAPILoader";
-import {ILog} from "../../interfaces/ILog";
 import {
-  Alert,
   Button,
-  Snackbar,
   Checkbox,
   Autocomplete, TextField, CircularProgress, Typography, Box
 } from "@mui/material";
@@ -25,8 +22,7 @@ const CLIENT_ID = "18533555788-5fr6kdhaqh7j8dfogv2u1qqut4m1p94f.apps.googleuserc
 const SCOPES = 'https://www.googleapis.com/auth/tasks \
                 https://www.googleapis.com/auth/tasks.readonly';
 
-const GoogleTasks = () => {
-  const [logs, setLogs] = useState<ILog[]>([]);
+const GoogleTasks = ({ addNotification }: {addNotification: (message: string, severity: AlertColor) => void}) => {
   const { isOAuthClientLoaded, gsi } = useLoadGsiScript();
   const [client, setClient] = useState<IInitTokenClientResult | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -39,22 +35,6 @@ const GoogleTasks = () => {
   const [tasks, setTasks] = useState<IGoogleTaskItem[] | null>(null);
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [taskTreeExpanded, setTaskTreeExpanded] = useState<string[]>([]);
-
-  const addLog = (message: string, severity: AlertColor) => {
-    const id = crypto.randomUUID();
-    setLogs([
-      ...logs,
-      {
-        id: id,
-        message: message,
-        severity: severity,
-      }
-    ])
-  }
-
-  const removeLog = (id: string) => {
-    setLogs(logs.filter(log => log.id !== id))
-  }
 
   const getTaskLists = () => {
     const xhr = new XMLHttpRequest();
@@ -81,7 +61,7 @@ const GoogleTasks = () => {
           const response: IGoogleTasks = JSON.parse(this.responseText);
           setTasks(response.items);
         } else {
-          addLog("Loading tasks failed", "error");
+          addNotification("Loading tasks failed", "error");
         }
         setLoadingTasks(false);
       }
@@ -112,7 +92,7 @@ const GoogleTasks = () => {
 
     if (gsi === null)
     {
-      addLog("Unable to load Google's API", "error");
+      addNotification("Unable to load Google's API", "error");
       return;
     }
 
@@ -124,7 +104,7 @@ const GoogleTasks = () => {
       scope: SCOPES,
       callback: (tokenResponse: IInitTokenClientCallback) => {
         setAccessToken(tokenResponse.access_token);
-        addLog("Logged in", "success");
+        addNotification("Logged in", "success");
       }
     });
 
@@ -166,16 +146,6 @@ const GoogleTasks = () => {
 
   return (
     <>
-      {logs.map(log => {
-        return (
-          <Snackbar key={log.id} open={true} autoHideDuration={3000} onClose={() => removeLog(log.id)}>
-            <Alert onClose={() => removeLog(log.id)} severity={log.severity} sx={{ width: '100%' }}>
-              {log.message}
-            </Alert>
-          </Snackbar>
-        )})
-      }
-
       {client && !accessToken &&
           <Button onClick={() => client.requestAccessToken()} startIcon={<GoogleIcon/>}>Log in</Button>
       }
