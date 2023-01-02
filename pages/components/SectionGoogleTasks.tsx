@@ -1,12 +1,24 @@
 import React, {useEffect, useState} from "react";
 import { useLoadGsiScript } from "../../hooks/GoogleAPILoader";
 import {ILog} from "../../interfaces/ILog";
-import {Alert, Button, List, Snackbar, ListItemButton, ListItem} from "@mui/material";
+import {
+  Alert,
+  Button,
+  List,
+  Snackbar,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Checkbox,
+  Autocomplete, TextField, CircularProgress
+} from "@mui/material";
 import {AlertColor} from "@mui/material/Alert";
 import GoogleIcon from '@mui/icons-material/Google';
 import {IInitTokenClientCallback, IInitTokenClientResult} from "../../interfaces/IGoogleAPI";
 import {ITaskList, ITaskListResponse} from "../../interfaces/ITaskListResponse";
-import {IGoogleTask} from "../../interfaces/ITask";
+import {IGoogleTaskItem, IGoogleTasks} from "../../interfaces/ITask";
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
+import TaskAltIcon from '@mui/icons-material/TaskAlt';
 
 const CLIENT_ID = "18533555788-5fr6kdhaqh7j8dfogv2u1qqut4m1p94f.apps.googleusercontent.com";
 const SCOPES = 'https://www.googleapis.com/auth/tasks \
@@ -17,9 +29,14 @@ const GoogleTasks = () => {
   const { isOAuthClientLoaded, gsi } = useLoadGsiScript();
   const [client, setClient] = useState<IInitTokenClientResult | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [taskLists, setTaskLists] = useState<ITaskList[] | null>(null);
-  const [selectedList, setSelectedList] = useState<string | null>(null);
-  const [tasks, setTasks] = useState<IGoogleTask[] | null>(null);
+
+  const [taskListOpen, setTaskListOpen] = useState(false);
+  const [taskLists, setTaskLists] = useState<ITaskList[]>([]);
+  const loadingTaskLists = taskListOpen && taskLists.length === 0;
+
+  const [selectedList, setSelectedList] = useState<ITaskList | null>(null);
+  const [tasks, setTasks] = useState<IGoogleTaskItem[] | null>(null);
+  const [loadingTasks, setLoadingTasks] = useState(false);
 
   const addLog = (message: string, severity: AlertColor) => {
     const id = crypto.randomUUID();
@@ -51,15 +68,23 @@ const GoogleTasks = () => {
   }
 
   const getTasks = (id: string) => {
+    if (!accessToken)
+      return;
+
+    setLoadingTasks(true);
     const xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function() {
-      if (this.readyState == 4 && this.status == 200) {
-        const response = JSON.parse(this.responseText);
-        console.log(response)
+      if (this.readyState == 4) {
+        if (this.status == 200) {
+          const response: IGoogleTasks = JSON.parse(this.responseText);
+          setTasks(response.items);
+        } else {
+          addLog("Loading tasks failed", "error");
+        }
+        setLoadingTasks(false);
       }
     };
-    xhr.open('GET', `https://cors-anywhere.herokuapp.com/https://tasks.googleapis.com/tasks/v1/users/@me/lists/${id}\tasks`);
-    xhr.setRequestHeader('Authorization', 'Bearer ' + accessToken);
+    xhr.open('GET', `api/googleListTasks?accessToken=${accessToken}&taskListId=${id}`);
     xhr.send();
   }
 
@@ -91,12 +116,35 @@ const GoogleTasks = () => {
   }, [isOAuthClientLoaded, gsi, client])
 
   useEffect(() => {
+    let active = true;
+
+    if (!loadingTaskLists) {
+      return undefined;
+    }
+
+    (async () => {
+      if (active)
+        getTaskLists();
+    })();
+
+    return () => {
+      active = false;
+    }
+  }, [loadingTaskLists])
+
+  useEffect(() => {
+    if (!taskListOpen) {
+      setTaskLists([]);
+    }
+  }, [taskListOpen])
+
+  useEffect(() => {
     if (!selectedList) {
       setTasks(null);
       return;
     }
 
-    getTasks(selectedList);
+    getTasks(selectedList.id);
   }, [selectedList])
 
   return (
@@ -112,35 +160,62 @@ const GoogleTasks = () => {
       }
 
       {client && !accessToken &&
-        <Button onClick={() => client.requestAccessToken()} startIcon={<GoogleIcon/>}>Log in</Button>
+          <Button onClick={() => client.requestAccessToken()} startIcon={<GoogleIcon/>}>Log in</Button>
       }
-      {client && accessToken && !taskLists &&
-        <Button onClick={() => getTaskLists()}>Load task lists</Button>
+      {accessToken &&
+          <Autocomplete
+              sx={{ width: 300 }}
+              open={taskListOpen}
+              onOpen={() => {
+                setTaskListOpen(true);
+              }}
+              onClose={() => {
+                setTaskListOpen(false);
+              }}
+              isOptionEqualToValue={(option, value) => option.title === value.title}
+              getOptionLabel={(option) => option.title}
+              options={taskLists}
+              loading={loadingTaskLists}
+              value={selectedList}
+              onChange={(event: any, newValue: ITaskList | null) => setSelectedList(newValue)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Task list"
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <React.Fragment>
+                        {loadingTaskLists ? <CircularProgress color="inherit" size={20} /> : null}
+                        {params.InputProps.endAdornment}
+                      </React.Fragment>
+                    ),
+                  }}
+                />
+              )}
+          />
       }
-      {taskLists && !selectedList
-        ? taskLists.length > 0
-          ? <List>
-              {taskLists.map((list: any) => {
-                  return (
-                    <ListItemButton key={list.id} onClick={() => setSelectedList(list.id)}>{list.title}</ListItemButton>
-                  )
-                })
-              }
-            </List>
-          : <Alert severity="warning">Your account has no Google Task lists</Alert>
-        : <span></span>
-      }
+      {loadingTasks && <CircularProgress color="inherit" />}
       {selectedList && tasks
         ? tasks.length > 0
           ? <List>
-              {
-                tasks.map(task => {
-                  return (
-                    <ListItem key={task.id}></ListItem>
-                  )
-                })
-              }
-            </List>
+            {
+              tasks.map(task => {
+                return (
+                  <ListItem key={task.id}>
+                    <ListItemIcon>
+                      <Checkbox aria-label={`Google task ${task.id}`}
+                                disabled
+                                checked={task.status != "needsAction"}
+                                icon={<RadioButtonUncheckedIcon/>}
+                                checkedIcon={<TaskAltIcon/>}/>
+                    </ListItemIcon>
+                    <ListItemText primary={task.title}/>
+                  </ListItem>
+                )
+              })
+            }
+          </List>
           : <span>No tasks</span>
         : <span></span>
       }

@@ -29,7 +29,9 @@ export default function Home() {
             <Grid2 container spacing={2}>
               <Grid2 md={6} sm={12}>
                 <Card variant="elevation">
-                  <CardHeader title="Google Tasks"/>
+                  <CardHeader title={
+                      `Google Tasks`
+                  }/>
                   <CardContent>
                     <SectionGoogleTasks/>
                   </CardContent>

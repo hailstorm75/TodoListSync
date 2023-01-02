@@ -9,10 +9,3 @@ body {
     max-width: 100vw;
     overflow-x: hidden;
 }
-
-footer {
-    position: fixed;
-    left:0;
-    bottom:0;
-    right:0;
-}
