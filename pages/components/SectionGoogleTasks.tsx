@@ -34,13 +34,7 @@ const GoogleTasks = () => {
   }
 
   const removeLog = (id: string) => {
-    const index = logs.findIndex(log => log.id === id)
-    if (index === -1) {
-      console.error(`Unable to remove log element from stack with UUID: '${id}'`)
-      return;
-    }
-
-    setLogs(logs.splice(index, 1))
+    setLogs(logs.filter(log => log.id !== id))
   }
 
   const getTaskLists = () => {
