@@ -10,7 +10,7 @@ import {
   ListItemIcon,
   ListItemText,
   Checkbox,
-  Autocomplete, TextField, CircularProgress
+  Autocomplete, TextField, CircularProgress, Collapse, ListItemButton
 } from "@mui/material";
 import {AlertColor} from "@mui/material/Alert";
 import GoogleIcon from '@mui/icons-material/Google';
@@ -19,6 +19,7 @@ import {ITaskList, ITaskListResponse} from "../../interfaces/ITaskListResponse";
 import {IGoogleTaskItem, IGoogleTasks} from "../../interfaces/ITask";
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
+import {ExpandLess, ExpandMore} from "@mui/icons-material";
 
 const CLIENT_ID = "18533555788-5fr6kdhaqh7j8dfogv2u1qqut4m1p94f.apps.googleusercontent.com";
 const SCOPES = 'https://www.googleapis.com/auth/tasks \
@@ -164,7 +165,6 @@ const GoogleTasks = () => {
       }
       {accessToken &&
           <Autocomplete
-              sx={{ width: 300 }}
               open={taskListOpen}
               onOpen={() => {
                 setTaskListOpen(true);
@@ -195,25 +195,71 @@ const GoogleTasks = () => {
               )}
           />
       }
-      {loadingTasks && <CircularProgress color="inherit" />}
+      {loadingTasks && <CircularProgress color="inherit" style={{ marginTop: '10px' }} />}
       {selectedList && tasks
         ? tasks.length > 0
           ? <List>
             {
-              tasks.map(task => {
-                return (
-                  <ListItem key={task.id}>
-                    <ListItemIcon>
-                      <Checkbox aria-label={`Google task ${task.id}`}
-                                disabled
-                                checked={task.status != "needsAction"}
-                                icon={<RadioButtonUncheckedIcon/>}
-                                checkedIcon={<TaskAltIcon/>}/>
-                    </ListItemIcon>
-                    <ListItemText primary={task.title}/>
-                  </ListItem>
-                )
-              })
+              tasks
+                .filter(task => !task.parent)
+                .map(task => {
+                  const children = tasks
+                    .filter(subTask => subTask.parent === task.id)
+                  console.group(task.title);
+                  console.log(task);
+                  console.log(children);
+                  console.groupEnd();
+
+                  if (children.length === 0 )
+                    return (
+                      <ListItem key={task.id}>
+                        <ListItemIcon>
+                          <Checkbox aria-label={`Google task ${task.id}`}
+                                    disabled
+                                    checked={task.status != "needsAction"}
+                                    icon={<RadioButtonUncheckedIcon/>}
+                                    checkedIcon={<TaskAltIcon/>}/>
+                        </ListItemIcon>
+                        <ListItemText primary={task.title}/>
+                      </ListItem>
+                    )
+                  else {
+                    return (
+                      <>
+                        <ListItem key={task.id}>
+                          <ListItemIcon>
+                            <Checkbox aria-label={`Google task ${task.id}`}
+                                      disabled
+                                      checked={task.status != "needsAction"}
+                                      icon={<RadioButtonUncheckedIcon/>}
+                                      checkedIcon={<TaskAltIcon/>}/>
+                          </ListItemIcon>
+                          <ListItemText primary={task.title}/>
+                        </ListItem>
+                        <Collapse key={task.id + "-subTasks"} in={true} timeout="auto" unmountOnExit>
+                          <List component="div" disablePadding>
+                            {
+                              children.map(subTask => {
+                                return (
+                                  <ListItem key={task.id + subTask.id} sx={{pl: 4}}>
+                                    <ListItemIcon>
+                                      <Checkbox aria-label={`Google task ${subTask.id}`}
+                                                disabled
+                                                checked={subTask.status != "needsAction"}
+                                                icon={<RadioButtonUncheckedIcon/>}
+                                                checkedIcon={<TaskAltIcon/>}/>
+                                    </ListItemIcon>
+                                    <ListItemText primary={subTask.title}/>
+                                  </ListItem>
+                                )
+                              })
+                            }
+                          </List>
+                        </Collapse>
+                      </>
+                    )
+                  }
+                })
             }
           </List>
           : <span>No tasks</span>
