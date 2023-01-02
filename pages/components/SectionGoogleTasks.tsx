@@ -4,13 +4,9 @@ import {ILog} from "../../interfaces/ILog";
 import {
   Alert,
   Button,
-  List,
   Snackbar,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
   Checkbox,
-  Autocomplete, TextField, CircularProgress, Collapse, ListItemButton
+  Autocomplete, TextField, CircularProgress, Typography, Box
 } from "@mui/material";
 import {AlertColor} from "@mui/material/Alert";
 import GoogleIcon from '@mui/icons-material/Google';
@@ -19,8 +15,12 @@ import {ITaskList, ITaskListResponse} from "../../interfaces/ITaskListResponse";
 import {IGoogleTaskItem, IGoogleTasks} from "../../interfaces/ITask";
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
-import {ExpandLess, ExpandMore} from "@mui/icons-material";
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import TreeView from '@mui/lab/TreeView';
+import TreeItem from '@mui/lab/TreeItem';
 
+// noinspection SpellCheckingInspection
 const CLIENT_ID = "18533555788-5fr6kdhaqh7j8dfogv2u1qqut4m1p94f.apps.googleusercontent.com";
 const SCOPES = 'https://www.googleapis.com/auth/tasks \
                 https://www.googleapis.com/auth/tasks.readonly';
@@ -38,6 +38,7 @@ const GoogleTasks = () => {
   const [selectedList, setSelectedList] = useState<ITaskList | null>(null);
   const [tasks, setTasks] = useState<IGoogleTaskItem[] | null>(null);
   const [loadingTasks, setLoadingTasks] = useState(false);
+  const [taskTreeExpanded, setTaskTreeExpanded] = useState<string[]>([]);
 
   const addLog = (message: string, severity: AlertColor) => {
     const id = crypto.randomUUID();
@@ -88,6 +89,21 @@ const GoogleTasks = () => {
     xhr.open('GET', `api/googleListTasks?accessToken=${accessToken}&taskListId=${id}`);
     xhr.send();
   }
+
+  const handleTaskTreeExpand = () => {
+    if (!tasks)
+      return;
+
+    setTaskTreeExpanded((oldExpanded) =>
+      oldExpanded.length === 0
+        ? Array.from(new Set(tasks.filter(task => task.parent).map(task => task.parent)))
+        : []
+    );
+  }
+
+  const taskTreeNodeToggle = (event: React.SyntheticEvent, nodeIds: string[]) => {
+    setTaskTreeExpanded(nodeIds);
+  };
 
   useEffect(() => {
     if (gsi === undefined) {
@@ -198,70 +214,90 @@ const GoogleTasks = () => {
       {loadingTasks && <CircularProgress color="inherit" style={{ marginTop: '10px' }} />}
       {selectedList && tasks
         ? tasks.length > 0
-          ? <List>
-            {
-              tasks
-                .filter(task => !task.parent)
-                .map(task => {
-                  const children = tasks
-                    .filter(subTask => subTask.parent === task.id)
-                  console.group(task.title);
-                  console.log(task);
-                  console.log(children);
-                  console.groupEnd();
+          ? <>
+            <Box sx={{ mb: 1, mt: 1 }}>
+              <Button onClick={handleTaskTreeExpand}>
+                {taskTreeExpanded.length === 0 ? 'Expand all' : 'Collapse all'}
+              </Button>
+            </Box>
+            <TreeView
+              disableSelection={true}
+              expanded={taskTreeExpanded}
+              onNodeToggle={taskTreeNodeToggle}
+              defaultCollapseIcon={<ExpandMoreIcon />}
+              defaultExpandIcon={<ChevronRightIcon />}>
+              {
+                tasks
+                  .filter(task => !task.parent)
+                  .map(task => {
+                    const children = tasks
+                      .filter(subTask => subTask.parent === task.id)
+                    console.group(task.title);
+                    console.log(task);
+                    console.log(children);
+                    console.groupEnd();
 
-                  if (children.length === 0 )
-                    return (
-                      <ListItem key={task.id}>
-                        <ListItemIcon>
-                          <Checkbox aria-label={`Google task ${task.id}`}
-                                    disabled
-                                    checked={task.status != "needsAction"}
-                                    icon={<RadioButtonUncheckedIcon/>}
-                                    checkedIcon={<TaskAltIcon/>}/>
-                        </ListItemIcon>
-                        <ListItemText primary={task.title}/>
-                      </ListItem>
-                    )
-                  else {
-                    return (
-                      <>
-                        <ListItem key={task.id}>
-                          <ListItemIcon>
-                            <Checkbox aria-label={`Google task ${task.id}`}
-                                      disabled
-                                      checked={task.status != "needsAction"}
-                                      icon={<RadioButtonUncheckedIcon/>}
-                                      checkedIcon={<TaskAltIcon/>}/>
-                          </ListItemIcon>
-                          <ListItemText primary={task.title}/>
-                        </ListItem>
-                        <Collapse key={task.id + "-subTasks"} in={true} timeout="auto" unmountOnExit>
-                          <List component="div" disablePadding>
-                            {
-                              children.map(subTask => {
-                                return (
-                                  <ListItem key={task.id + subTask.id} sx={{pl: 4}}>
-                                    <ListItemIcon>
-                                      <Checkbox aria-label={`Google task ${subTask.id}`}
-                                                disabled
-                                                checked={subTask.status != "needsAction"}
-                                                icon={<RadioButtonUncheckedIcon/>}
-                                                checkedIcon={<TaskAltIcon/>}/>
-                                    </ListItemIcon>
-                                    <ListItemText primary={subTask.title}/>
-                                  </ListItem>
-                                )
-                              })
-                            }
-                          </List>
-                        </Collapse>
-                      </>
-                    )
-                  }
-                })
-            }
-          </List>
+                    if (children.length === 0 )
+                      return (
+                        <TreeItem
+                          key={task.id}
+                          nodeId={task.id}
+                          label={
+                            <Box sx={{ display: 'flex', alignItems: 'center', p: 0.5, pr: 0 }}>
+                              <Checkbox aria-label={`Google task ${task.id}`}
+                                        disabled
+                                        checked={task.status != "needsAction"}
+                                        icon={<RadioButtonUncheckedIcon/>}
+                                        checkedIcon={<TaskAltIcon/>}/>
+                              <Typography variant="body2" sx={{ fontWeight: 'inherit', flexGrow: 1 }}>
+                                {task.title}
+                              </Typography>
+                            </Box>
+                          }>
+                        </TreeItem>
+                      )
+                    else {
+                      return (
+                        <TreeItem
+                          key={task.id}
+                          nodeId={task.id}
+                          label={
+                            <Box sx={{ display: 'flex', alignItems: 'center', p: 0.5, pr: 0 }}>
+                              <Checkbox aria-label={`Google task ${task.id}`}
+                                        disabled
+                                        checked={task.status != "needsAction"}
+                                        icon={<RadioButtonUncheckedIcon/>}
+                                        checkedIcon={<TaskAltIcon/>}/>
+                              <Typography variant="body2" sx={{ fontWeight: 'inherit', flexGrow: 1 }}>
+                                {task.title}
+                              </Typography>
+                            </Box>
+                          }>
+                          {
+                            children.map(subTask => {
+                              return (
+                                <TreeItem key={task.id + subTask.id} nodeId={task.id + subTask.id} label={
+                                  <Box sx={{ display: 'flex', alignItems: 'center', p: 0.5, pr: 0 }}>
+                                    <Checkbox aria-label={`Google task ${task.id}`}
+                                              disabled
+                                              checked={task.status != "needsAction"}
+                                              icon={<RadioButtonUncheckedIcon/>}
+                                              checkedIcon={<TaskAltIcon/>}/>
+                                    <Typography variant="body2" sx={{ fontWeight: 'inherit', flexGrow: 1 }}>
+                                      {task.title}
+                                    </Typography>
+                                  </Box>
+                                }/>
+                              )
+                            })
+                          }
+                        </TreeItem>
+                      )
+                    }
+                  })
+              }
+            </TreeView>
+          </>
           : <span>No tasks</span>
         : <span></span>
       }
