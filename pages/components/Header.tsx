@@ -1,9 +1,10 @@
-import { AppBar, Box, Toolbar, IconButton, Typography, Container, Button, MenuItem, Menu } from '@mui/material';
+import { AppBar, Box, Toolbar, IconButton, Typography, Container, Button, MenuItem, Menu, Grid } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SyncIcon from '@mui/icons-material/Sync';
+import GitHubIcon from '@mui/icons-material/GitHub';
 import React from "react";
 
-const pages = ['Products', 'Pricing', 'Blog'];
+const pages = ['Home', 'About'];
 
 const Header = () => {
   const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(null);
@@ -95,15 +96,24 @@ const Header = () => {
             Todo List Sync
           </Typography>
           <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
-            {pages.map((page) => (
-              <Button
-                key={page}
-                onClick={handleCloseNavMenu}
-                sx={{ my: 2, color: 'white', display: 'block' }}
-              >
-                {page}
-              </Button>
-            ))}
+            <Grid container spacing={2}>
+              <Grid item xs={10}>
+                {pages.map((page) => (
+                  <Button
+                    key={page}
+                    onClick={handleCloseNavMenu}
+                    sx={{ my: 2, color: 'white', display: 'block' }}
+                  >
+                    {page}
+                  </Button>
+                ))}
+              </Grid>
+              <Grid item xs={2}>
+                <a href="https://github.com/hailstorm75/todo-list-sync" target="_blank">
+                  <GitHubIcon/>
+                </a>
+              </Grid>
+            </Grid>
           </Box>
         </Toolbar>
       </Container>
