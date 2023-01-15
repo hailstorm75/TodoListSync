@@ -21,6 +21,7 @@
     }
   },
   "dependencies": {
+    "@doist/todoist-api-typescript": "^2.1.2",
     "@emotion/react": "^11.10.5",
     "@emotion/styled": "^11.10.5",
     "@fontsource/roboto": "^4.5.8",
