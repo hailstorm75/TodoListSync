@@ -1,4 +1,14 @@
-import { AppBar, Box, Toolbar, IconButton, Typography, Container, Button, MenuItem, Menu, Grid } from '@mui/material';
+import {
+  AppBar,
+  Box,
+  Toolbar,
+  IconButton,
+  Typography,
+  Container,
+  Button,
+  MenuItem,
+  Menu,
+} from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SyncIcon from '@mui/icons-material/Sync';
 import GitHubIcon from '@mui/icons-material/GitHub';
@@ -17,6 +27,7 @@ const Header = () => {
     setAnchorElNav(null);
   };
 
+  // @ts-ignore
   return (
     <AppBar position="static">
       <Container maxWidth="xl">
@@ -96,24 +107,19 @@ const Header = () => {
             Todo List Sync
           </Typography>
           <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
-            <Grid container spacing={2}>
-              <Grid item xs={10}>
-                {pages.map((page) => (
-                  <Button
-                    key={page}
-                    onClick={handleCloseNavMenu}
-                    sx={{ my: 2, color: 'white', display: 'block' }}
-                  >
-                    {page}
-                  </Button>
-                ))}
-              </Grid>
-              <Grid item xs={2}>
-                <a href="https://github.com/hailstorm75/todo-list-sync" target="_blank">
-                  <GitHubIcon/>
-                </a>
-              </Grid>
-            </Grid>
+            {pages.map((page) => (
+              <Button
+                key={page}
+                onClick={handleCloseNavMenu}
+                sx={{ my: 2, color: 'white', display: 'block' }}>
+                {page}
+              </Button>
+            ))}
+          </Box>
+          <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
+            <IconButton aria-label="github" href="https://github.com/hailstorm75/todo-list-sync" target="_blank" rel="noreferrer">
+              <GitHubIcon/>
+            </IconButton>
           </Box>
         </Toolbar>
       </Container>
