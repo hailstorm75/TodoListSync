@@ -246,7 +246,7 @@ const Todoister = ({ addNotification }: {addNotification: (message: string, seve
                           nodeId={task.id}
                           label={
                             <Box sx={{ display: 'flex', alignItems: 'center', p: 0.5, pr: 0 }}>
-                              <Checkbox aria-label={`Google task ${task.id}`}
+                              <Checkbox aria-label={`Todoist task ${task.id}`}
                                         disabled
                                         checked={task.isCompleted}
                                         icon={<RadioButtonUncheckedIcon/>}
@@ -261,13 +261,13 @@ const Todoister = ({ addNotification }: {addNotification: (message: string, seve
                               return (
                                 <TreeItem key={task.id + subTask.id} nodeId={task.id + subTask.id} label={
                                   <Box sx={{ display: 'flex', alignItems: 'center', p: 0.5, pr: 0 }}>
-                                    <Checkbox aria-label={`Google task ${task.id}`}
+                                    <Checkbox aria-label={`Todoist task ${subTask.id}`}
                                               disabled
-                                              checked={task.isCompleted}
+                                              checked={subTask.isCompleted}
                                               icon={<RadioButtonUncheckedIcon/>}
                                               checkedIcon={<TaskAltIcon/>}/>
                                     <Typography variant="body2" sx={{ fontWeight: 'inherit', flexGrow: 1 }}>
-                                      {task.content}
+                                      {subTask.content}
                                     </Typography>
                                   </Box>
                                 }/>

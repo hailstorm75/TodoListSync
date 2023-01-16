@@ -248,13 +248,13 @@ const GoogleTasks = ({ addNotification }: {addNotification: (message: string, se
                               return (
                                 <TreeItem key={task.id + subTask.id} nodeId={task.id + subTask.id} label={
                                   <Box sx={{ display: 'flex', alignItems: 'center', p: 0.5, pr: 0 }}>
-                                    <Checkbox aria-label={`Google task ${task.id}`}
+                                    <Checkbox aria-label={`Google task ${subTask.id}`}
                                               disabled
                                               checked={task.status != "needsAction"}
                                               icon={<RadioButtonUncheckedIcon/>}
                                               checkedIcon={<TaskAltIcon/>}/>
                                     <Typography variant="body2" sx={{ fontWeight: 'inherit', flexGrow: 1 }}>
-                                      {task.title}
+                                      {subTask.title}
                                     </Typography>
                                   </Box>
                                 }/>
