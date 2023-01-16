@@ -9,6 +9,7 @@ import Grid2 from "@mui/material/Unstable_Grid2";
 import {createTheme, ThemeProvider} from "@mui/material/styles";
 import Notifications from "./components/Notifications";
 import {useNotifications} from "../hooks/NotificationsHook";
+import Todoister from "./components/SectionTodoister";
 
 const darkTheme = createTheme({
   palette: {
@@ -46,9 +47,9 @@ export default function Home() {
                 </Grid2>
                 <Grid2 md={6} sm={12}>
                   <Card>
-                    <CardHeader title="Microsoft TODO"/>
+                    <CardHeader title="Todoist"/>
                     <CardContent>
-                      <SectionMicrosoftTodo addNotification={addNotification}/>
+                      <Todoister addNotification={addNotification}/>
                     </CardContent>
                   </Card>
                 </Grid2>
