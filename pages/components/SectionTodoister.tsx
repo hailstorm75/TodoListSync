@@ -101,9 +101,9 @@ const Todoister = ({ addNotification }: {addNotification: (message: string, seve
 
   const handleAuth = () => {
     let authCode: string | null = null;
-    const clientId = process.env.TODOIST_ID;
+    const clientId = process.env.NEXT_PUBLIC_TODOIST_ID;
     const state = crypto.randomUUID();
-    const callbackUrl = process.env.TODOIST_REDIRECT;
+    const callbackUrl = process.env.NEXT_PUBLIC_TODOIST_REDIRECT;
     const externalUrl = `https://todoist.com/oauth/authorize?client_id=${clientId}&scope=data:read_write&state=${state}&redirect_uri=${callbackUrl}`;
     const authWindowParams = "popup=yes,toolbar=no,menubar=no,width=500,height=550"
     const authWindow = window.open(externalUrl, '_blank', authWindowParams);
@@ -131,9 +131,6 @@ const Todoister = ({ addNotification }: {addNotification: (message: string, seve
       if (accessToken)
         return;
 
-      const clientId = process.env.TODOIST_ID;
-      const clientSecret = process.env.TODOIST_SECRET;
-
       const xhr = new XMLHttpRequest();
       xhr.onreadystatechange = function() {
         if (this.readyState == 4) {
@@ -145,7 +142,7 @@ const Todoister = ({ addNotification }: {addNotification: (message: string, seve
           }
         }
       };
-      xhr.open('POST', `https://todoist.com/oauth/access_token?client_id=${clientId}&client_secret=${clientSecret}&code=${authCode}`);
+      xhr.open('GET', `api/todoistAccessToken?code=${authCode}`);
       xhr.send();
     }
 
