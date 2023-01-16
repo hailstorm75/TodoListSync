@@ -19,26 +19,23 @@ export interface IGoogleTaskItem {
 
 export type GoogleTaskStatus = 'needsAction' | 'completed'
 
-export interface IGoogleTask {
+export interface IGoogleTaskLink {
+  type: string,
+  description: string,
+  link: string
+}
+
+export interface IGoogleTaskListResponse {
+  kind: string,
+  etag: string,
+  items: IGoogleTaskList[]
+}
+
+export interface IGoogleTaskList {
   kind: string,
   id: string,
   etag: string,
   title: string,
   updated: string,
-  selfLink: string,
-  parent: string,
-  position: string,
-  notes: string,
-  status: string,
-  due: string,
-  completed: string,
-  deleted: boolean,
-  hidden: boolean,
-  links: IGoogleTaskLink[]
-}
-
-export interface IGoogleTaskLink {
-  type: string,
-  description: string,
-  link: string
+  selfLink: string
 }

@@ -1,4 +1,4 @@
-import {INotificationsParams} from "../../interfaces/NotificationsParams";
+import {INotificationsParams} from "../../interfaces/INotificationsParams";
 import {Alert, Snackbar} from "@mui/material";
 import React from "react";
 

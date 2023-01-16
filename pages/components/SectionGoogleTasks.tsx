@@ -8,8 +8,7 @@ import {
 import {AlertColor} from "@mui/material/Alert";
 import GoogleIcon from '@mui/icons-material/Google';
 import {IInitTokenClientCallback, IInitTokenClientResult} from "../../interfaces/IGoogleAPI";
-import {ITaskList, ITaskListResponse} from "../../interfaces/ITaskListResponse";
-import {IGoogleTaskItem, IGoogleTasks} from "../../interfaces/ITask";
+import {IGoogleTaskItem, IGoogleTasks, IGoogleTaskList, IGoogleTaskListResponse} from "../../interfaces/IGoogleTaskModels";
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -28,10 +27,10 @@ const GoogleTasks = ({ addNotification }: {addNotification: (message: string, se
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
   const [taskListOpen, setTaskListOpen] = useState(false);
-  const [taskLists, setTaskLists] = useState<ITaskList[]>([]);
+  const [taskLists, setTaskLists] = useState<IGoogleTaskList[]>([]);
   const loadingTaskLists = taskListOpen && taskLists.length === 0;
 
-  const [selectedList, setSelectedList] = useState<ITaskList | null>(null);
+  const [selectedList, setSelectedList] = useState<IGoogleTaskList | null>(null);
   const [tasks, setTasks] = useState<IGoogleTaskItem[] | null>(null);
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [taskTreeExpanded, setTaskTreeExpanded] = useState<string[]>([]);
@@ -40,7 +39,7 @@ const GoogleTasks = ({ addNotification }: {addNotification: (message: string, se
     const xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function() {
       if (this.readyState == 4 && this.status == 200) {
-        const response: ITaskListResponse = JSON.parse(this.responseText);
+        const response: IGoogleTaskListResponse = JSON.parse(this.responseText);
         setTaskLists(response.items);
       }
     };
@@ -163,7 +162,7 @@ const GoogleTasks = ({ addNotification }: {addNotification: (message: string, se
               options={taskLists}
               loading={loadingTaskLists}
               value={selectedList}
-              onChange={(event: any, newValue: ITaskList | null) => setSelectedList(newValue)}
+              onChange={(event: any, newValue: IGoogleTaskList | null) => setSelectedList(newValue)}
               renderInput={(params) => (
                 <TextField
                   {...params}
