@@ -7,7 +7,7 @@ const Footer = () => {
       <Box bgcolor="text.secondary">
         <Container maxWidth="lg">
           <Box textAlign="center" pt={{ xs: 2, sm: 5 }} pb={{ xs: 2, sm: 5 }}>
-            Copyright TodListSync &reg; {new Date().getFullYear()}
+            Copyright TodoListSync &reg; {new Date().getFullYear()}
           </Box>
         </Container>
       </Box>
