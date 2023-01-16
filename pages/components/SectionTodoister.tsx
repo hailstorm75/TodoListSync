@@ -1,6 +1,5 @@
 // noinspection SpellCheckingInspection
 
-import {AlertColor} from "@mui/material/Alert";
 import React, {useEffect, useState} from "react";
 import {Autocomplete, Box, Button, Checkbox, CircularProgress, TextField, Typography} from "@mui/material";
 import {Project, Task, TodoistApi} from "@doist/todoist-api-typescript";
@@ -11,8 +10,9 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import TreeItem from "@mui/lab/TreeItem";
+import {ISectionParams} from "../../interfaces/ISectionParams";
 
-const Todoister = ({ addNotification }: {addNotification: (message: string, severity: AlertColor) => void}) => {
+const Todoister = ({ addNotification, setIsReady }: ISectionParams) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [api, setApi] = useState<TodoistApi | null>(null);
 
@@ -81,6 +81,7 @@ const Todoister = ({ addNotification }: {addNotification: (message: string, seve
 
     (async () => {
       await getTasks(selectedList.id);
+      setIsReady(true);
     })();
   }, [selectedList])
 

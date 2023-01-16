@@ -13,6 +13,7 @@ import SwipeLeftAltIcon from '@mui/icons-material/SwipeLeftAlt';
 import SwipeRightAltIcon from '@mui/icons-material/SwipeRightAlt';
 import SwipeDownAltIcon from '@mui/icons-material/SwipeDownAlt';
 import SwipeUpAltIcon from '@mui/icons-material/SwipeUpAlt';
+import {IGenericTaskGroup} from "../interfaces/IGenericTaskModels";
 
 const darkTheme = createTheme({
   palette: {
@@ -22,7 +23,12 @@ const darkTheme = createTheme({
 
 export default function Home() {
   const { notifications, removeNotification, addNotification } = useNotifications();
-  const [canSync, setCanSync] = useState(false);
+  const [googleReady, setGoogleReady] = useState(false);
+  const [todoistReady, setTodoistReady] = useState(false);
+  const canSync = googleReady && todoistReady;
+
+  const [googleTasks, setGoogleTasks] = useState<IGenericTaskGroup | null>(null);
+  const [todoistTasks, setTodoistTasks] = useState<IGenericTaskGroup | null>(null);
 
   return (
     <>
@@ -40,7 +46,7 @@ export default function Home() {
                       `Google Tasks`
                     }/>
                     <CardContent>
-                      <SectionGoogleTasks addNotification={addNotification}/>
+                      <SectionGoogleTasks addNotification={addNotification} setIsReady={setGoogleReady} setSelectedGroup={setGoogleTasks} />
                     </CardContent>
                   </Card>
                 </Grid2>
@@ -85,7 +91,7 @@ export default function Home() {
                   <Card>
                     <CardHeader title="Todoist"/>
                     <CardContent>
-                      <Todoister addNotification={addNotification}/>
+                      <Todoister addNotification={addNotification} setIsReady={setTodoistReady} setSelectedGroup={setTodoistTasks} />
                     </CardContent>
                   </Card>
                 </Grid2>

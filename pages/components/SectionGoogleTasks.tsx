@@ -5,7 +5,6 @@ import {
   Checkbox,
   Autocomplete, TextField, CircularProgress, Typography, Box
 } from "@mui/material";
-import {AlertColor} from "@mui/material/Alert";
 import GoogleIcon from '@mui/icons-material/Google';
 import {IInitTokenClientCallback, IInitTokenClientResult} from "../../interfaces/IGoogleAPI";
 import {IGoogleTaskItem, IGoogleTasks, IGoogleTaskList, IGoogleTaskListResponse} from "../../interfaces/IGoogleTaskModels";
@@ -15,13 +14,15 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import TreeView from '@mui/lab/TreeView';
 import TreeItem from '@mui/lab/TreeItem';
+import {IGenericTask, IGenericTaskGroup} from "../../interfaces/IGenericTaskModels";
+import {ISectionParams} from "../../interfaces/ISectionParams";
 
 // noinspection SpellCheckingInspection
 const CLIENT_ID = "18533555788-5fr6kdhaqh7j8dfogv2u1qqut4m1p94f.apps.googleusercontent.com";
 const SCOPES = 'https://www.googleapis.com/auth/tasks \
                 https://www.googleapis.com/auth/tasks.readonly';
 
-const GoogleTasks = ({ addNotification }: {addNotification: (message: string, severity: AlertColor) => void}) => {
+const GoogleTasks = ({ addNotification, setIsReady, setSelectedGroup }: ISectionParams) => {
   const { isOAuthClientLoaded, gsi } = useLoadGsiScript();
   const [client, setClient] = useState<IInitTokenClientResult | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -34,6 +35,40 @@ const GoogleTasks = ({ addNotification }: {addNotification: (message: string, se
   const [tasks, setTasks] = useState<IGoogleTaskItem[] | null>(null);
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [taskTreeExpanded, setTaskTreeExpanded] = useState<string[]>([]);
+
+  const toGenericTask = (task: IGoogleTaskItem, subTasks: IGenericTask[] = []) => {
+    return {
+      content: task.title,
+      complete: task.status === "completed",
+      subTasks: subTasks
+    }
+  }
+
+  const syncGenericTasks = () => {
+    if (!selectedList)
+      return;
+
+    if (!tasks)
+      return;
+
+    const bottomTasks = tasks
+      .filter(task => task.parent);
+    const topTasks = tasks
+      .filter(task => !task.parent)
+      .map(task => {
+        const subTasks = bottomTasks
+          .filter(subTask => subTask.parent === task.id)
+          .map(subTask => toGenericTask(subTask))
+        return toGenericTask(task, subTasks);
+      })
+
+    const group: IGenericTaskGroup = {
+      tasks: topTasks,
+      name: selectedList.title
+    }
+
+    setSelectedGroup(group)
+  };
 
   const getTaskLists = () => {
     const xhr = new XMLHttpRequest();
@@ -59,6 +94,7 @@ const GoogleTasks = ({ addNotification }: {addNotification: (message: string, se
         if (this.status == 200) {
           const response: IGoogleTasks = JSON.parse(this.responseText);
           setTasks(response.items);
+          syncGenericTasks();
         } else {
           addNotification("Loading tasks failed", "error");
         }
@@ -141,6 +177,7 @@ const GoogleTasks = ({ addNotification }: {addNotification: (message: string, se
     }
 
     getTasks(selectedList.id);
+    setIsReady(true);
   }, [selectedList])
 
   return (
