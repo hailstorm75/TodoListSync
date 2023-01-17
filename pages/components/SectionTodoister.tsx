@@ -45,6 +45,13 @@ const Todoister = ({ addNotification, setIsReady, setSelectedGroup, parentRef }:
       let failed = 0;
 
       for (const task of newData.tasks) {
+        const existingIndex = current.tasks.findIndex(t => t.content === task.content);
+        console.log(existingIndex);
+        if (existingIndex !== -1) {
+          // TODO Implement update
+          continue;
+        }
+
         processed += 1 + task.subTasks.length;
 
         const response = await createTask(task);
@@ -92,7 +99,7 @@ const Todoister = ({ addNotification, setIsReady, setSelectedGroup, parentRef }:
     setTasks(response);
   }
 
-  const toGenericTask = (task: Task, subTasks: IGenericTask[] = []) => {
+  const toGenericTask = (task: Task, subTasks: IGenericTask[] = []): IGenericTask => {
     return {
       content: task.content,
       complete: task.isCompleted,

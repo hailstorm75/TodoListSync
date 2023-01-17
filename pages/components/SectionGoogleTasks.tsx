@@ -55,6 +55,13 @@ const GoogleTasks = ({ addNotification, setIsReady, setSelectedGroup, parentRef 
       let processed = 0;
       let failed = 0;
       for (const task of newData.tasks) {
+        const existingIndex = current.tasks.findIndex(t => t.content === task.content);
+        console.log(existingIndex);
+        if (existingIndex !== -1) {
+          // TODO Implement update
+          continue;
+        }
+
         processed += 1 + task.subTasks.length;
 
         const response = await createTask(task);
@@ -85,13 +92,13 @@ const GoogleTasks = ({ addNotification, setIsReady, setSelectedGroup, parentRef 
     }
   }));
 
-  const toGenericTask = (task: IGoogleTaskItem, subTasks: IGenericTask[] = []) => {
+  const toGenericTask = (task: IGoogleTaskItem, subTasks: IGenericTask[] = []): IGenericTask => {
     return {
       content: task.title,
       complete: task.status === "completed",
       subTasks: subTasks,
-      due: task.due,
-      note: task.notes
+      due: task.due ?? "",
+      note: task.notes ?? ""
     }
   }
 
