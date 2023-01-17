@@ -1,6 +1,6 @@
 // noinspection SpellCheckingInspection
 
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useImperativeHandle, useState} from "react";
 import {Autocomplete, Box, Button, Checkbox, CircularProgress, TextField, Typography} from "@mui/material";
 import {Project, Task, TodoistApi} from "@doist/todoist-api-typescript";
 import ListIcon from '@mui/icons-material/List';
@@ -25,6 +25,54 @@ const Todoister = ({ addNotification, setIsReady, setSelectedGroup, parentRef }:
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [taskTreeExpanded, setTaskTreeExpanded] = useState<string[]>([]);
+
+  useImperativeHandle(parentRef, () => ({
+    async sync(newData: IGenericTaskGroup, current: IGenericTaskGroup) {
+      const createTask = async (task: IGenericTask, parentId: string | undefined = undefined) => {
+        try {
+          return await api?.addTask({
+            projectId: selectedList?.id,
+            content: task.content,
+            description: task.note,
+            parentId: parentId
+          });
+        } catch {
+          return null;
+        }
+      }
+
+      let processed = 0;
+      let failed = 0;
+
+      for (const task of newData.tasks) {
+        processed += 1 + task.subTasks.length;
+
+        const response = await createTask(task);
+        if (!response) {
+          addNotification(`Failed to sync task '${task.content}'`, "error");
+          failed += 1;
+          continue;
+        }
+
+        for (const subTask of task.subTasks) {
+          const subResponse = await createTask(subTask, response.id);
+
+          if (!subResponse) {
+            addNotification(`Failed to sync sub task '${subTask.content}' to '${task.content}'`, "error");
+            failed += 1;
+          }
+        }
+      }
+
+      if (selectedList)
+        await getTasks(selectedList.id);
+
+      return {
+        processed: processed,
+        failed: failed
+      }
+    }
+  }))
 
   const getTaskLists = async () => {
     if (!api)

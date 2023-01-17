@@ -70,6 +70,7 @@ const GoogleTasks = ({ addNotification, setIsReady, setSelectedGroup, parentRef 
 
           if (subResponse.status !== 200) {
             addNotification(`Failed to sync sub task '${subTask.content}' to '${task.content}'`, "error");
+            failed += 1;
           }
         }
       }

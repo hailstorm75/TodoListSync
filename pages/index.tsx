@@ -47,9 +47,6 @@ export default function Home() {
   const refTodoist = useRef<ISync>();
 
   const executeSync = async (newData: IGenericTaskGroup | null, current: IGenericTaskGroup | null, sync: ISync | undefined) => {
-    console.log("Execute called");
-    console.log(newData, current, sync)
-
     if (!newData || !current || !sync)
       return;
 

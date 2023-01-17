@@ -18,15 +18,13 @@ export function useLoadGsiScript(): GsiScriptState {
     scriptTag.defer = true;
 
     scriptTag.onload = () => {
-      console.log("Google API script loaded successfully")
       setIsOAuthClientLoaded(true);
 
       const windowProxy: any = window;
       setGsi(windowProxy.google);
     };
 
-    scriptTag.onerror = (ev: Event | string) => {
-      console.error(`Failed to load Google API script: ${ev.toString()}`)
+    scriptTag.onerror = (_: Event | string) => {
       setIsOAuthClientLoaded(false);
       setGsi(null);
     };
