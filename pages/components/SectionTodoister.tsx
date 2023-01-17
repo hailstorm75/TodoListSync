@@ -11,8 +11,9 @@ import TaskAltIcon from "@mui/icons-material/TaskAlt";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import TreeItem from "@mui/lab/TreeItem";
 import {ISectionParams} from "../../interfaces/ISectionParams";
+import {IGenericTask, IGenericTaskGroup} from "../../interfaces/IGenericTaskModels";
 
-const Todoister = ({ addNotification, setIsReady }: ISectionParams) => {
+const Todoister = ({ addNotification, setIsReady, setSelectedGroup, parentRef }: ISectionParams) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [api, setApi] = useState<TodoistApi | null>(null);
 
@@ -41,6 +42,42 @@ const Todoister = ({ addNotification, setIsReady }: ISectionParams) => {
     const response: Task[] = await api.getTasks({ projectId: projectId })
     setLoadingTasks(false);
     setTasks(response);
+  }
+
+  const toGenericTask = (task: Task, subTasks: IGenericTask[] = []) => {
+    return {
+      content: task.content,
+      complete: task.isCompleted,
+      subTasks: subTasks,
+      due: task.due?.date ?? "",
+      note: task.description
+    }
+  }
+
+  const syncGenericTasks = () => {
+    if (!selectedList)
+      return;
+
+    if (!tasks)
+      return;
+
+    const bottomTasks = tasks
+      .filter(task => task.parentId);
+    const topTasks = tasks
+      .filter(task => !task.parentId)
+      .map(task => {
+        const subTasks = bottomTasks
+          .filter(subTask => subTask.parentId === task.id)
+          .map(subTask => toGenericTask(subTask))
+        return toGenericTask(task, subTasks);
+      })
+
+    const group: IGenericTaskGroup = {
+      tasks: topTasks,
+      name: selectedList.name
+    }
+
+    setSelectedGroup(group)
   }
 
   useEffect(() => {
@@ -84,6 +121,10 @@ const Todoister = ({ addNotification, setIsReady }: ISectionParams) => {
       setIsReady(true);
     })();
   }, [selectedList])
+
+  useEffect(() => {
+    syncGenericTasks();
+  }, [tasks]);
 
   const handleTaskTreeExpand = () => {
     if (!tasks)
@@ -138,6 +179,7 @@ const Todoister = ({ addNotification, setIsReady }: ISectionParams) => {
           if (this.status == 200) {
             const response: { access_token: string, token_type: string } = JSON.parse(this.responseText);
             setAccessToken(response.access_token);
+            addNotification("Logged in", "success");
           } else {
             addNotification("Authorization into Todoist failed", "error");
           }
@@ -216,10 +258,6 @@ const Todoister = ({ addNotification, setIsReady }: ISectionParams) => {
                   .map(task => {
                     const children = tasks
                       .filter(subTask => subTask.parentId === task.id)
-                    console.group(task.content);
-                    console.log(task);
-                    console.log(children);
-                    console.groupEnd();
 
                     if (children.length === 0 )
                       return (

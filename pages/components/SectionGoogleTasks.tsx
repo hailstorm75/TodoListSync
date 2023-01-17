@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useImperativeHandle, useState} from "react";
 import { useLoadGsiScript } from "../../hooks/GoogleAPILoader";
 import {
   Button,
@@ -22,7 +22,7 @@ const CLIENT_ID = "18533555788-5fr6kdhaqh7j8dfogv2u1qqut4m1p94f.apps.googleuserc
 const SCOPES = 'https://www.googleapis.com/auth/tasks \
                 https://www.googleapis.com/auth/tasks.readonly';
 
-const GoogleTasks = ({ addNotification, setIsReady, setSelectedGroup }: ISectionParams) => {
+const GoogleTasks = ({ addNotification, setIsReady, setSelectedGroup, parentRef }: ISectionParams) => {
   const { isOAuthClientLoaded, gsi } = useLoadGsiScript();
   const [client, setClient] = useState<IInitTokenClientResult | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -36,11 +36,61 @@ const GoogleTasks = ({ addNotification, setIsReady, setSelectedGroup }: ISection
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [taskTreeExpanded, setTaskTreeExpanded] = useState<string[]>([]);
 
+  useImperativeHandle(parentRef, () => ({
+    async sync(newData: IGenericTaskGroup, current: IGenericTaskGroup) {
+      const createTask = async (task: IGenericTask) => {
+        return await fetch(`/api/googleAddTask?accessToken=${accessToken}&taskListId=${selectedList?.id}&title=${task.content}&status=${task.complete ? "completed" : "needsAction"}&due=${task.due}&notes=${task.note}`);
+      }
+      const createSubTask = async (parentId: string, task: IGenericTask) => {
+        const subtask = await createTask(task);
+        if (subtask.status !== 200) {
+          return subtask;
+        }
+
+        const val = await subtask.json();
+
+        return await fetch(`api/googleAssignParent?accessToken=${accessToken}&taskListId=${selectedList?.id}&parent=${parentId}&child=${val.id}`)
+      }
+
+      let processed = 0;
+      let failed = 0;
+      for (const task of newData.tasks) {
+        processed += 1 + task.subTasks.length;
+
+        const response = await createTask(task);
+        if (response.status !== 200) {
+          addNotification(`Failed to sync task '${task.content}'`, "error");
+          failed += 1;
+          continue;
+        }
+
+        const newTask = await response.json();
+        for (const subTask of task.subTasks) {
+          const subResponse = await createSubTask(newTask.id, subTask);
+
+          if (subResponse.status !== 200) {
+            addNotification(`Failed to sync sub task '${subTask.content}' to '${task.content}'`, "error");
+          }
+        }
+      }
+
+      if (selectedList)
+        getTasks(selectedList.id);
+
+      return {
+        processed: processed,
+        failed: failed
+      };
+    }
+  }));
+
   const toGenericTask = (task: IGoogleTaskItem, subTasks: IGenericTask[] = []) => {
     return {
       content: task.title,
       complete: task.status === "completed",
-      subTasks: subTasks
+      subTasks: subTasks,
+      due: task.due,
+      note: task.notes
     }
   }
 
@@ -94,7 +144,6 @@ const GoogleTasks = ({ addNotification, setIsReady, setSelectedGroup }: ISection
         if (this.status == 200) {
           const response: IGoogleTasks = JSON.parse(this.responseText);
           setTasks(response.items);
-          syncGenericTasks();
         } else {
           addNotification("Loading tasks failed", "error");
         }
@@ -143,7 +192,6 @@ const GoogleTasks = ({ addNotification, setIsReady, setSelectedGroup }: ISection
       }
     });
 
-    console.log(result);
     setClient(result);
   }, [isOAuthClientLoaded, gsi, client])
 
@@ -179,6 +227,10 @@ const GoogleTasks = ({ addNotification, setIsReady, setSelectedGroup }: ISection
     getTasks(selectedList.id);
     setIsReady(true);
   }, [selectedList])
+
+  useEffect(() => {
+    syncGenericTasks();
+  }, [tasks])
 
   return (
     <>
@@ -238,11 +290,6 @@ const GoogleTasks = ({ addNotification, setIsReady, setSelectedGroup }: ISection
                   .map(task => {
                     const children = tasks
                       .filter(subTask => subTask.parent === task.id)
-                    console.group(task.title);
-                    console.log(task);
-                    console.log(children);
-                    console.groupEnd();
-
                     if (children.length === 0 )
                       return (
                         <TreeItem

@@ -13,6 +13,8 @@ export interface IGoogleTaskItem {
   selfLink: string,
   position: string,
   parent: string,
+  due: string,
+  notes: string,
   status: GoogleTaskStatus,
   links: IGoogleTaskLink[]
 }

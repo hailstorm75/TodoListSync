@@ -6,5 +6,7 @@ export interface IGenericTaskGroup {
 export interface IGenericTask {
   content: string,
   complete: boolean,
+  due: string,
+  note: string,
   subTasks: IGenericTask[]
 }
